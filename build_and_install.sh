@@ -2,7 +2,7 @@
 
 fontfile=../liberation-fonts/src/LiberationSerif-Regular.sfd
 tmpfile=$(mktemp)
-swap_csv=latin_greek_codepoints.csv
+swap_csv=traditional_greek_romanization.tsv
 outname=LiberationGreekLatinSwap
 
 ./swap.py $fontfile $tmpfile $swap_csv

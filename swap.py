@@ -21,20 +21,23 @@ def swap_characters(sfd_file, char_map, output_file):
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
-        print("Usage: python swap_sfd_chars.py <input.sfd> <output.sfd> <char_map.csv>")
+        print("Usage: python swap_sfd_chars.py <input.sfd> <output.sfd> <transcription_map.tsv>")
         sys.exit(1)
 
     sfd_file = sys.argv[1]
     output_file = sys.argv[2]
     char_map_file = sys.argv[3]
     with open(char_map_file, 'r', encoding='utf-8') as file:
-        file.readline() # Skip header
         char_map = {}
         for line in file.readlines():
-            key, value = line.strip().split(',')
-            char_map[key] = value
-            char_map[value] = key
+            print(f'Line: {line}')
+            key, value = line.strip().split('\t')
 
-    char_map = {k: v.strip() for k, v in char_map.items()}
+            # for now, we don't do ligatures
+            if len(key) > 1 or len(value) > 1:
+                continue
+
+            char_map[ord(key)] = ord(value)
+            char_map[ord(value)] = ord(key)
 
     swap_characters(sfd_file, char_map, output_file)
