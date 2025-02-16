@@ -1,32 +1,20 @@
 #!/usr/bin/env python3
 
+import fontforge
 import sys
-import re
 
-def swap_characters(sfd_file, char_map, output_file):
-    with open(sfd_file, 'r', encoding='utf-8') as file:
-        content = file.readlines()
+def rename(font, new_font_name):
+    font.fontname = new_font_name
+    font.familyname = new_font_name
+    font.fullname = new_font_name
 
-    for i, line in enumerate(content):
-        match = re.match(r'^Encoding: (\d+)', line)
-        if match:
-            old_char = match.group(1)
-            if old_char in char_map:
-                new_char = char_map[old_char]
-                content[i] = re.sub(rf'^Encoding: {old_char} ', f'Encoding: {new_char} ', line)
-                print(f'Swapped {old_char} -> {new_char}')
+def swap(font, char_map):
+    font.encoding = 'UnicodeBmp' # make sure the unicode is taken into account
+    for glyph in font.glyphs():
+        if glyph.unicode in char_map:
+            glyph.unicode = char_map[glyph.unicode]
 
-    with open(output_file, 'w', encoding='utf-8') as file:
-        file.writelines(content)
-
-if __name__ == "__main__":
-    if len(sys.argv) < 4:
-        print("Usage: python swap_sfd_chars.py <input.sfd> <output.sfd> <transcription_map.tsv>")
-        sys.exit(1)
-
-    sfd_file = sys.argv[1]
-    output_file = sys.argv[2]
-    char_map_file = sys.argv[3]
+def gen_char_map(char_map_file):
     with open(char_map_file, 'r', encoding='utf-8') as file:
         char_map = {}
         for line in file.readlines():
@@ -38,5 +26,24 @@ if __name__ == "__main__":
 
             char_map[ord(key)] = ord(value)
             char_map[ord(value)] = ord(key)
+        return char_map
+    
 
-    swap_characters(sfd_file, char_map, output_file)
+if __name__ == "__main__":
+    if len(sys.argv) != 5:
+        print("Usage: fontforge -script test.py <input.sfd> <output.otf> <new_font_name> <transcription_map.tsv>")
+        sys.exit(1)
+
+    print(sys.argv)
+    
+    output_otf = sys.argv[2]
+
+    char_map = gen_char_map(sys.argv[4])
+
+    font = fontforge.open(sys.argv[1])
+    rename(font, sys.argv[3])
+    swap(font, char_map)
+
+    # font.save("test.sfd")
+    font.generate(sys.argv[2])
+    print(f"Font saved as {sys.argv[2]}")
