@@ -30,7 +30,6 @@ if __name__ == "__main__":
     with open(char_map_file, 'r', encoding='utf-8') as file:
         char_map = {}
         for line in file.readlines():
-            print(f'Line: {line}')
             key, value = line.strip().split('\t')
 
             # for now, we don't do ligatures
