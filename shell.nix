@@ -3,5 +3,6 @@
 		buildInputs = [
 			pkgs.fontforge-gtk
 			pkgs.python3
+			pkgs.font-manager
 		];
 }
