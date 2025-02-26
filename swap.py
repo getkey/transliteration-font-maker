@@ -9,10 +9,28 @@ def rename(font, new_font_name):
     font.fullname = new_font_name
 
 def swap(font, char_map):
-    font.encoding = 'UnicodeBmp' # make sure the unicode is taken into account
     for glyph in font.glyphs():
-        if glyph.unicode in char_map:
-            glyph.unicode = char_map[glyph.unicode]
+        if glyph.unicode == -1:
+            continue
+
+        char = chr(glyph.unicode)
+        if char in char_map:
+            glyph.unicode = ord(char_map[char])
+
+def ligate(font, ligature_map, simple_map):
+    font.addLookup("liga","gsub_ligature",(),(("liga", (("latn", ("dflt")), ("grek", ("dflt")))),))
+    font.addLookupSubtable("liga","liga1")
+
+    for ligature, key in ligature_map.items():
+        ligature_chars = []
+        for char in ligature:
+            char = simple_map.get(char, char)
+            char = font[ord(char)].glyphname
+            ligature_chars.append(char)
+        ligature_tuple = tuple(ligature_chars)
+
+        glyph = font[ord(key)]
+        glyph.addPosSub("liga1", ligature_tuple)
 
 def gen_1_to_1_mappings(file):
     char_map = {}
@@ -24,8 +42,8 @@ def gen_1_to_1_mappings(file):
         if len(key) > 1 or len(value) > 1:
             continue
 
-        char_map[ord(key)] = ord(value)
-        char_map[ord(value)] = ord(key)
+        char_map[key] = value
+        char_map[value] = key
 
     return char_map
 
@@ -57,11 +75,11 @@ if __name__ == "__main__":
         simple_mappings = gen_1_to_1_mappings(transcription_file)
         ligature_mappings = gen_ligature_mappings(transcription_file)
 
-    print(ligature_mappings)
-
     font = fontforge.open(sys.argv[1])
+    font.encoding = 'UnicodeBmp' # make sure the unicode is taken into account
     rename(font, sys.argv[3])
     swap(font, simple_mappings)
+    ligate(font, ligature_mappings, simple_mappings)
 
     # font.save("test.sfd")
     font.generate(sys.argv[2])
