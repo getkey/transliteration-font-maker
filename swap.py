@@ -4,7 +4,7 @@ import fontforge
 import sys
 
 def rename(font, new_font_name):
-    font.fontname = new_font_name
+    font.fontname = new_font_name.replace(' ', '')
     font.familyname = new_font_name
     font.fullname = new_font_name
 
@@ -31,6 +31,20 @@ def ligate(font, ligature_map, simple_map):
 
         glyph = font[ord(key)]
         glyph.addPosSub("liga1", ligature_tuple)
+
+def decompose(font, ligature_map):
+    font.addLookup("decomp","gsub_multiple",(),(("ccmp", (("latn", ("dflt")), ("grek", ("dflt")))),))
+    font.addLookupSubtable("decomp","decomp1")
+
+    for ligature, key in ligature_map.items():
+        ligature_chars = []
+        for char in ligature:
+            char = font[ord(char)].glyphname
+            ligature_chars.append(char)
+        ligature_tuple = tuple(ligature_chars)
+
+        glyph = font[ord(key)]
+        glyph.addPosSub("decomp1", ligature_tuple)
 
 def gen_1_to_1_mappings(file):
     char_map = {}
@@ -80,6 +94,7 @@ if __name__ == "__main__":
     rename(font, sys.argv[3])
     swap(font, simple_mappings)
     ligate(font, ligature_mappings, simple_mappings)
+    decompose(font, ligature_mappings)
 
     # font.save("test.sfd")
     font.generate(sys.argv[2])
