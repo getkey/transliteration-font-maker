@@ -8,18 +8,20 @@ def rename(font, new_font_name):
     font.familyname = new_font_name
     font.fullname = new_font_name
 
-def swap(font, char_map):
+def swap(font, simple_map):
+    # we are doing this instead of gsub_single so we can have a 2-way swap
+    # otherwise, if α -> a and a -> α, we would have a cycle and a would turn into α and then back to a
     for glyph in font.glyphs():
         if glyph.unicode == -1:
             continue
 
         char = chr(glyph.unicode)
-        if char in char_map:
-            glyph.unicode = ord(char_map[char])
+        if char in simple_map:
+            glyph.unicode = ord(simple_map[char])
 
 def ligate(font, ligature_map, simple_map):
-    font.addLookup("liga","gsub_ligature",(),(("liga", (("latn", ("dflt")), ("grek", ("dflt")))),))
-    font.addLookupSubtable("liga","liga1")
+    font.addLookup("crosslig","gsub_ligature",(),(("ccmp", (("dflt", ("dflt")),)),))
+    font.addLookupSubtable("crosslig","crosslig1")
 
     for ligature, key in ligature_map.items():
         ligature_chars = []
@@ -30,11 +32,11 @@ def ligate(font, ligature_map, simple_map):
         ligature_tuple = tuple(ligature_chars)
 
         glyph = font[ord(key)]
-        glyph.addPosSub("liga1", ligature_tuple)
+        glyph.addPosSub("crosslig1", ligature_tuple)
 
 def decompose(font, ligature_map):
-    font.addLookup("decomp","gsub_multiple",(),(("ccmp", (("latn", ("dflt")), ("grek", ("dflt")))),))
-    font.addLookupSubtable("decomp","decomp1")
+    font.addLookup("crossdecomp","gsub_multiple",(),(("ccmp", (("dflt", ("dflt")),)),))
+    font.addLookupSubtable("crossdecomp","crossdecomp1")
 
     for ligature, key in ligature_map.items():
         ligature_chars = []
@@ -44,7 +46,7 @@ def decompose(font, ligature_map):
         ligature_tuple = tuple(ligature_chars)
 
         glyph = font[ord(key)]
-        glyph.addPosSub("decomp1", ligature_tuple)
+        glyph.addPosSub("crossdecomp1", ligature_tuple)
 
 def gen_1_to_1_mappings(file):
     char_map = {}
@@ -66,9 +68,6 @@ def gen_ligature_mappings(file):
     file.seek(0)
     for line in file:
         key, value = line.strip().split('\t')
-
-
-        print(key, value)
 
         if len(key) > 1 and len(value) == 1:
             char_map[key] = value
