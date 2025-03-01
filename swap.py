@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import fontforge
-import sys
+import argparse
 
 def rename(font, new_font_name):
     font.fontname = new_font_name.replace(' ', '')
@@ -53,20 +53,26 @@ def gen_mappings(file):
     return mappings
 
 if __name__ == "__main__":
-    if len(sys.argv) != 5:
-        print("Usage: fontforge -script test.py <input.sfd> <output.otf> <new_font_name> <transcription_map.tsv>")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description='Swap characters in a font')
+    parser.add_argument('input', type=str, help='Input font file')
+    parser.add_argument('-g', '--generate', type=str, help='Output .sfd file')
+    parser.add_argument('-o', '--output', type=str, required=True, help='Output font file (e.g. .otf, .ttf)')
+    parser.add_argument('-n', '--name', type=str, help='Font name')
+    parser.add_argument('-t', '--transcription-table', required=True, type=str, help='Transcription TSV file')
+    args = parser.parse_args()
 
-    output_otf = sys.argv[2]
-
-    with open(sys.argv[4], 'r', encoding='utf-8') as transcription_file:
+    with open(args.transcription_table, 'r', encoding='utf-8') as transcription_file:
         mappings = gen_mappings(transcription_file)
 
-    font = fontforge.open(sys.argv[1])
+    font = fontforge.open(args.input)
     font.encoding = 'UnicodeBmp' # make sure the unicode is taken into account
-    rename(font, sys.argv[3])
+    if args.name:
+        rename(font, args.name)
     swap(font, mappings)
 
-    # font.save("test.sfd")
-    font.generate(sys.argv[2])
-    print(f"Font saved as {sys.argv[2]}")
+    if args.generate:
+        font.save(args.generate)
+        print(f"Font saved as {args.generate}")
+
+    font.generate(args.output)
+    print(f"Font saved as {args.output}")
