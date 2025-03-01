@@ -8,74 +8,49 @@ def rename(font, new_font_name):
     font.familyname = new_font_name
     font.fullname = new_font_name
 
-def swap(font, simple_map):
-    # we are doing this instead of gsub_single so we can have a 2-way swap
-    # otherwise, if α -> a and a -> α, we would have a cycle and a would turn into α and then back to a
-    for glyph in font.glyphs():
-        if glyph.unicode == -1:
-            continue
+def swap(font, mappings):
+    for script, simple_map in mappings.items():
+        swap_table_name = f"crossswap_{script}"
+        font.addLookup(swap_table_name, "gsub_single", (), (("ccmp", ((script, ("dflt")),)),))
+        font.addLookupSubtable(swap_table_name, swap_table_name)
 
-        char = chr(glyph.unicode)
-        if char in simple_map:
-            glyph.unicode = ord(simple_map[char])
+        ligature_table_name = f"crosslig_{script}"
+        font.addLookup(ligature_table_name, "gsub_ligature", (), (("ccmp", ((script, ("dflt")),)),))
+        font.addLookupSubtable(ligature_table_name, ligature_table_name)
 
-def ligate(font, ligature_map, simple_map):
-    font.addLookup("crosslig","gsub_ligature",(),(("ccmp", (("latn", ("dflt")), ("grek", ("dflt")))),))
-    font.addLookupSubtable("crosslig","crosslig1")
+        decompose_table_name = f"crossdecomp_{script}"
+        font.addLookup(decompose_table_name, "gsub_multiple", (), (("ccmp", ((script, ("dflt")),)),))
+        font.addLookupSubtable(decompose_table_name, decompose_table_name)
 
-    for ligature, key in ligature_map.items():
-        ligature_chars = []
-        for char in ligature:
-            char = simple_map.get(char, char)
-            char = font[ord(char)].glyphname
-            ligature_chars.append(char)
-        ligature_tuple = tuple(ligature_chars)
+        for key, value in simple_map.items():
+            if len(key) > 1 and len(value) > 1:
+                # not implemented, this require contextual substitution which is non-trivial
+                continue
 
-        glyph = font[ord(key)]
-        glyph.addPosSub("crosslig1", ligature_tuple)
+            if len(key) > 1:
+                font[ord(value)].addPosSub(ligature_table_name, tuple([font[ord(char)].glyphname for char in key]))
+                continue
 
-def decompose(font, ligature_map):
-    font.addLookup("crossdecomp","gsub_multiple",(),(("ccmp", (("latn", ("dflt")), ("grek", ("dflt")))),))
-    font.addLookupSubtable("crossdecomp","crossdecomp1")
+            if len(value) > 1:
+                font[ord(key)].addPosSub(decompose_table_name, tuple([font[ord(char)].glyphname for char in value]))
+                continue
 
-    for ligature, key in ligature_map.items():
-        ligature_chars = []
-        for char in ligature:
-            char = font[ord(char)].glyphname
-            ligature_chars.append(char)
-        ligature_tuple = tuple(ligature_chars)
+            font[ord(key)].addPosSub(swap_table_name, font[ord(value)].glyphname)
 
-        glyph = font[ord(key)]
-        glyph.addPosSub("crossdecomp1", ligature_tuple)
+def gen_mappings(file):
+    script1, script2 = file.readline().strip().split('\t')
 
-def gen_1_to_1_mappings(file):
-    char_map = {}
-    file.seek(0)
+    mappings = {}
+    mappings[script1] = {}
+    mappings[script2] = {}
+    
     for line in file:
         key, value = line.strip().split('\t')
 
-        # exclude ligatures
-        if len(key) > 1 or len(value) > 1:
-            continue
+        mappings[script1][key] = value
+        mappings[script2][value] = key
 
-        char_map[key] = value
-        char_map[value] = key
-
-    return char_map
-
-def gen_ligature_mappings(file):
-    char_map = {}
-    file.seek(0)
-    for line in file:
-        key, value = line.strip().split('\t')
-
-        if len(key) > 1 and len(value) == 1:
-            char_map[key] = value
-
-        if len(value) > 1 and len(key) == 1:
-            char_map[value] = key
-
-    return char_map
+    return mappings
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
@@ -85,15 +60,12 @@ if __name__ == "__main__":
     output_otf = sys.argv[2]
 
     with open(sys.argv[4], 'r', encoding='utf-8') as transcription_file:
-        simple_mappings = gen_1_to_1_mappings(transcription_file)
-        ligature_mappings = gen_ligature_mappings(transcription_file)
+        mappings = gen_mappings(transcription_file)
 
     font = fontforge.open(sys.argv[1])
     font.encoding = 'UnicodeBmp' # make sure the unicode is taken into account
     rename(font, sys.argv[3])
-    swap(font, simple_mappings)
-    ligate(font, ligature_mappings, simple_mappings)
-    decompose(font, ligature_mappings)
+    swap(font, mappings)
 
     # font.save("test.sfd")
     font.generate(sys.argv[2])
