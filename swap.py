@@ -20,7 +20,7 @@ def swap(font, simple_map):
             glyph.unicode = ord(simple_map[char])
 
 def ligate(font, ligature_map, simple_map):
-    font.addLookup("crosslig","gsub_ligature",(),(("ccmp", (("dflt", ("dflt")),)),))
+    font.addLookup("crosslig","gsub_ligature",(),(("ccmp", (("latn", ("dflt")), ("grek", ("dflt")))),))
     font.addLookupSubtable("crosslig","crosslig1")
 
     for ligature, key in ligature_map.items():
@@ -35,7 +35,7 @@ def ligate(font, ligature_map, simple_map):
         glyph.addPosSub("crosslig1", ligature_tuple)
 
 def decompose(font, ligature_map):
-    font.addLookup("crossdecomp","gsub_multiple",(),(("ccmp", (("dflt", ("dflt")),)),))
+    font.addLookup("crossdecomp","gsub_multiple",(),(("ccmp", (("latn", ("dflt")), ("grek", ("dflt")))),))
     font.addLookupSubtable("crossdecomp","crossdecomp1")
 
     for ligature, key in ligature_map.items():
