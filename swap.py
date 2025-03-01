@@ -28,14 +28,29 @@ def swap(font, mappings):
                 continue
 
             if len(key) > 1:
-                font[ord(value)].addPosSub(ligature_table_name, tuple([font[ord(char)].glyphname for char in key]))
+                try:
+                    src = font[ord(key)]
+                    dest = tuple([font[ord(char)].glyphname for char in key])
+                except TypeError:
+                    continue
+
+                src.addPosSub(ligature_table_name, dest)
                 continue
 
             if len(value) > 1:
-                font[ord(key)].addPosSub(decompose_table_name, tuple([font[ord(char)].glyphname for char in value]))
+                try:
+                    src = font[ord(key)]
+                    dest = tuple([font[ord(char)].glyphname for char in value])
+                except TypeError:
+                    continue
+
+                src.addPosSub(decompose_table_name, dest)
                 continue
 
-            font[ord(key)].addPosSub(swap_table_name, font[ord(value)].glyphname)
+            try:
+                font[ord(key)].addPosSub(swap_table_name, font[ord(value)].glyphname)
+            except TypeError:
+                continue
 
 def gen_mappings(file):
     script1, script2 = file.readline().strip().split('\t')
