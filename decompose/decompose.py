@@ -6,15 +6,19 @@ It is impractical to generate a mapping by hand, so this script generates a mapp
 """
 
 import unicodedata
+import os
 
-with open('./transcriptions/traditional_greek_romanization.tsv', 'r') as file:
+base = os.path.join(os.path.dirname(__file__), 'traditional_greek_romanization_base.tsv')
+extended = os.path.join(os.path.dirname(__file__), 'extended.tsv')
+
+with open(base, 'r') as file:
     mappings = {}
     for line in file:
         key, value = line.strip().split('\t')
 
         mappings[key] = value
 
-with open('extended.tsv', 'r') as f:
+with open(extended, 'r') as f:
     for line in f:
         old = line.strip()
         new = ''
