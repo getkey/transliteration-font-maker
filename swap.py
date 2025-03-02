@@ -23,34 +23,32 @@ def swap(font, mappings):
         font.addLookupSubtable(decompose_table_name, decompose_table_name)
 
         for key, value in simple_map.items():
-            if len(key) > 1 and len(value) > 1:
-                # not implemented, this require contextual substitution which is non-trivial
-                continue
-
-            if len(key) > 1:
-                try:
-                    src = font[ord(key)]
-                    dest = tuple([font[ord(char)].glyphname for char in key])
-                except TypeError:
+            try:
+                if len(key) > 1 and len(value) > 1:
+                    # not implemented, this require contextual substitution which is non-trivial
                     continue
 
-                src.addPosSub(ligature_table_name, dest)
-                continue
+                if len(key) > 1:
+                    src = font[ord(value)]
+                    dest = tuple([font[ord(char)].glyphname for char in key])
 
-            if len(value) > 1:
-                try:
+                    src.addPosSub(ligature_table_name, dest)
+                    continue
+
+                if len(value) > 1:
                     src = font[ord(key)]
                     dest = tuple([font[ord(char)].glyphname for char in value])
-                except TypeError:
+
+                    src.addPosSub(decompose_table_name, dest)
                     continue
 
-                src.addPosSub(decompose_table_name, dest)
-                continue
-
-            try:
                 font[ord(key)].addPosSub(swap_table_name, font[ord(value)].glyphname)
-            except TypeError:
-                continue
+            except TypeError as err:
+                if 'No such glyph' in str(err):
+                    print(f"Glyph not found: {key} or {value}", file=sys.stderr)
+                    continue
+
+                raise err
 
 def gen_mappings(file):
     script1, script2 = file.readline().strip().split('\t')
