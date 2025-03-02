@@ -1,4 +1,6 @@
 #!/bin/sh
 
-cp ./decompose/traditional_greek_romanization_base.tsv ./transcriptions/traditional_greek_romanization.tsv
-./decompose/decompose.py >> ./transcriptions/traditional_greek_romanization.tsv
+script_dir=$(dirname "$0")
+
+cp "$script_dir"/traditional_greek_romanization_base.tsv "$script_dir"/../transcriptions/traditional_greek_romanization.tsv
+"$script_dir"/decompose.py -b "$script_dir"/traditional_greek_romanization_base.tsv -c "$script_dir"/extended.tsv >> "$script_dir"/../transcriptions/traditional_greek_romanization.tsv

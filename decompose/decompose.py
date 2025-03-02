@@ -6,31 +6,43 @@ It is impractical to generate a mapping by hand, so this script generates a mapp
 """
 
 import unicodedata
-import os
+import argparse
 
-base = os.path.join(os.path.dirname(__file__), 'traditional_greek_romanization_base.tsv')
-extended = os.path.join(os.path.dirname(__file__), 'extended.tsv')
-
-with open(base, 'r') as file:
+def gen_mappings(files):
     mappings = {}
-    for line in file:
-        key, value = line.strip().split('\t')
+    for file in files:
+        with open(file, 'r') as f:
+            for line in f:
+                key, value = line.strip().split('\t')
 
-        mappings[key] = value
+                mappings[key] = value
 
-with open(extended, 'r') as f:
-    for line in f:
-        old = line.strip()
-        new = ''
-        for codepoint in unicodedata.normalize('NFD', old):
-            if mappings.get(codepoint):
-                new += mappings[codepoint]
-                continue
+    return mappings
 
-            new += codepoint
+def print_decomposed(files, mappings):
+    for file in files:
+        with open(file, 'r') as f:
+            for line in f:
+                old = line.strip()
+                new = ''
+                for codepoint in unicodedata.normalize('NFD', old):
+                    if mappings.get(codepoint):
+                        new += mappings[codepoint]
+                        continue
 
-        new = unicodedata.normalize('NFC', new)
-        if old == new:
-            continue
+                    new += codepoint
 
-        print(old + '\t' + new)
+                new = unicodedata.normalize('NFC', new)
+                if old == new:
+                    continue
+
+                print(old + '\t' + new)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-b', '--base', action='append', type=str, required=True, help='Base .tsv file')
+    parser.add_argument('-c', '--char-list', action='append', type=str, required=True, help='Char list file')
+    args = parser.parse_args()
+
+    mappings = gen_mappings(args.base)
+    print_decomposed(args.char_list, mappings)
