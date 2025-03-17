@@ -3,7 +3,7 @@
 # A font based on [Liberation](https://github.com/liberationfonts/liberation-fonts) can be built and installed with the following script.
 
 liberation_fonts_dir=../liberation-fonts/src/
-swap_csv=./transcriptions/traditional_greek_romanization.tsv
+swap_csv=./transliterations/traditional_greek_romanization.tsv
 
 for i in "$liberation_fonts_dir"*.sfd; do
 	outfile=$(basename "$i" .sfd | sed 's/^Liberation/Apeleutherosis/')

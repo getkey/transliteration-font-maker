@@ -70,11 +70,11 @@ if __name__ == "__main__":
     parser.add_argument('input', type=str, help='Input font file')
     parser.add_argument('-o', '--output', type=str, action="append", required=True, help='Output font file (e.g. .otf, .ttf, .sfd)')
     parser.add_argument('-n', '--name', type=str, help='Font name')
-    parser.add_argument('-t', '--transcription-table', required=True, type=str, help='Transcription TSV file')
+    parser.add_argument('-t', '--transliteration-table', required=True, type=str, help='Transcription TSV file')
     args = parser.parse_args()
 
-    with open(args.transcription_table, 'r', encoding='utf-8') as transcription_file:
-        mappings = gen_mappings(transcription_file)
+    with open(args.transliteration_table, 'r', encoding='utf-8') as transliteration_file:
+        mappings = gen_mappings(transliteration_file)
 
     font = fontforge.open(args.input)
     font.encoding = 'UnicodeBmp' # make sure the unicode is taken into account
