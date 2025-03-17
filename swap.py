@@ -68,8 +68,7 @@ def gen_mappings(file):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Swap characters in a font')
     parser.add_argument('input', type=str, help='Input font file')
-    parser.add_argument('-g', '--generate', type=str, help='Output .sfd file')
-    parser.add_argument('-o', '--output', type=str, required=True, help='Output font file (e.g. .otf, .ttf)')
+    parser.add_argument('-o', '--output', type=str, action="append", required=True, help='Output font file (e.g. .otf, .ttf, .sfd)')
     parser.add_argument('-n', '--name', type=str, help='Font name')
     parser.add_argument('-t', '--transcription-table', required=True, type=str, help='Transcription TSV file')
     args = parser.parse_args()
@@ -83,9 +82,10 @@ if __name__ == "__main__":
         rename(font, args.name)
     swap(font, mappings)
 
-    if args.generate:
-        font.save(args.generate)
-        print(f"Font saved as {args.generate}")
+    for output in args.output:
+        if output.endswith('.sfd'):
+            font.save(output)
+        else:
+            font.generate(output)
 
-    font.generate(args.output)
-    print(f"Font saved as {args.output}")
+        print(f"Font saved as {output}")
