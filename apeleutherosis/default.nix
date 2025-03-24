@@ -1,8 +1,9 @@
-{ pkgs ? import <nixpkgs> {} }:
+{ pkgs ? import <nixpkgs> {}, version ? "0.0.0" }:
 
 pkgs.stdenv.mkDerivation rec {
 	pname = "apeleutherosis-fonts";
-	version = "0.0.0-2.1.5";
+	inherit version;
+	name = "${pname}-${version}";
 
 	src = pkgs.lib.cleanSource ./..;
 
@@ -26,10 +27,10 @@ pkgs.stdenv.mkDerivation rec {
 
 	installPhase = ''
 		find ./out/ \( -name '*.otf' -o -name '*.ttf' -o -name '*.woff' -o -name '*.woff2' \) -exec install -m444 -Dt $out/share/fonts/truetype {} \;
-		install -m444 -Dt $out/share/doc/${pname}-${version} ./readme.md
+		install -m444 -Dt $out/share/doc/${name} ./readme.md
 
 		for i in "AUTHORS" "ChangeLog" "LICENSE"; do
-			install -m444 -Dt $out/share/doc/${pname}-${version} ${liberation}/$i
+			install -m444 -Dt $out/share/doc/${name} ${liberation}/$i
 		done
 	'';
 
