@@ -25,7 +25,7 @@ pkgs.stdenv.mkDerivation rec {
 	'';
 
 	installPhase = ''
-		find ./out/ \( -name '*.otf' -o -name '*.ttf' \) -exec install -m444 -Dt $out/share/fonts/truetype {} \;
+		find ./out/ \( -name '*.otf' -o -name '*.ttf' -o -name '*.woff' -o -name '*.woff2' \) -exec install -m444 -Dt $out/share/fonts/truetype {} \;
 		install -m444 -Dt $out/share/doc/${pname}-${version} ./readme.md
 
 		for i in "AUTHORS" "ChangeLog" "LICENSE"; do
