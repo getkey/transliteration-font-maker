@@ -4,9 +4,9 @@ import fontforge
 import argparse
 
 def rename(font, new_font_name):
-    font.fontname = new_font_name.replace(' ', '')
+    font.fullname = font.fullname.replace(font.familyname, new_font_name)
     font.familyname = new_font_name
-    font.fullname = new_font_name
+    font.fontname = font.fullname.replace(' ', '')
 
 def swap(font, mappings):
     for script, simple_map in mappings.items():
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Swap characters in a font')
     parser.add_argument('input', type=str, help='Input font file')
     parser.add_argument('-o', '--output', type=str, action="append", required=True, help='Output font file (e.g. .otf, .ttf, .sfd)')
-    parser.add_argument('-n', '--name', type=str, help='Font name')
+    parser.add_argument('-n', '--name', type=str, help='Font family name')
     parser.add_argument('-t', '--transliteration-table', required=True, type=str, help='Transcription TSV file')
     args = parser.parse_args()
 
