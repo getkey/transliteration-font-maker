@@ -1,15 +1,19 @@
-# transliteration-font-maker
+# transliteration-fonts
 
-This software modifies fonts in [SFD format](https://fontforge.org/docs/techref/sfdformat.html) with a transliteration table. This allows displaying text in another script than its native script.
+These fonts allow displaying text in another script than its native script. This is useful to learn to decipher an alphabet you are **not** accustomed to, in a language you **are** accustomed to.
 
-This is a useful tool to learn to decipher an alphabet you are **not** accustomed to, in a language you **are** accustomed to.
+Transliterations fonts can be downloaded from the [releases](https://github.com/getkey/transliteration-font-maker/releases/latest).
+
+## Creating your font
+
+This software modifies fonts in [SFD format](https://fontforge.org/docs/techref/sfdformat.html) with a transliteration table.
 
 ```sh
 fontforge -script swap.py -t my_transliteration_file.tsv -o ./my_font.otf ./my_font.sfd
 ```
 
-## For convenience
+## Building the provided [transliterations](./transliterations)
 
-This repository contains a few transliteration files in [this directory](https://github.com/getkey/cross-alphabetizer/tree/main/transliterations) for various scripts.
-
-This repository provides [a script](https://github.com/getkey/cross-alphabetizer/tree/main/apeleutherosis) to modify the Liberation Fonts to transliterate latin to greek.
+```
+nix-build
+```

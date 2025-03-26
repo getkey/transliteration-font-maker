@@ -1,4 +1,4 @@
-name: "Release Apeleutherosis"
+name: "Release"
 on:
   push:
 
@@ -13,10 +13,14 @@ jobs:
       with:
         nix_path: nixpkgs=channel:nixos-24.11
     - name: Build
-      working-directory: ./apeleutherosis/
-      run: nix-build
+      run: nix-build --argstr version ${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
     - name: Release
       if: startsWith(github.ref, 'refs/tags/')
-      run: gh release create "${{ github.ref_name }}" --generate-notes ./apeleutherosis/result/share/fonts/truetype/*
+      run: |
+        font_files=""
+        for link in $(find . -type l -name 'result*'); do
+          font_files="$font_files$(find "$link/share/fonts/truetype" -type f) "
+        done
+        gh release create "${{ github.ref_name }}" --generate-notes $font_files
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

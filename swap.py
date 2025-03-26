@@ -88,4 +88,4 @@ if __name__ == "__main__":
         else:
             font.generate(output)
 
-        print(f"Font saved as {output}")
+        print(f"Font {font.fontname} saved as {output}")
