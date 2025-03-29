@@ -19,7 +19,7 @@ jobs:
       run: |
         font_files=""
         for link in $(find . -type l -name 'result*'); do
-          font_files="$font_files$(find "$link/share/fonts/truetype" -type f) "
+          font_files="$font_files$(find "$link/share/fonts/" -type f) "
         done
         gh release create "${{ github.ref_name }}" --generate-notes $font_files
       env:

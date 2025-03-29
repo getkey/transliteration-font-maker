@@ -6,10 +6,10 @@ Transliterations fonts can be downloaded from the [releases](https://github.com/
 
 ## Creating your font
 
-This software modifies fonts in [SFD format](https://fontforge.org/docs/techref/sfdformat.html) with a transliteration table.
+This tool modifies TrueType fonts (`.ttf`) with a transliteration table.
 
 ```sh
-fontforge -script swap.py -t my_transliteration_file.tsv -o ./my_font.otf ./my_font.sfd
+./swap.py -t transliteration_file.tsv -o input_font.ttf transliteration_font.sfd
 ```
 
 ## Building the provided [transliterations](./transliterations)

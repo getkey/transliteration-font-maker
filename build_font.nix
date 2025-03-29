@@ -7,34 +7,24 @@ pkgs.stdenv.mkDerivation rec {
 
 	src = pkgs.lib.cleanSource ./.;
 
-	sourceFonts = pkgs.fetchFromGitHub {
-		owner = "dejavu-fonts";
-		repo = "dejavu-fonts";
-		rev = "version_2_37";
-		sha256 = "sha256-c5EJ9IlT5lPMVPZsBhyOi1B21xi5WLHJ6O0gAcWjdvY=";
-	};
-
 	nativeBuildInputs = [
-		pkgs.fontforge
 		pkgs.python3
+		pkgs.python3Packages.fonttools
+		pkgs.noto-fonts
 	];
 
 	buildPhase = ''
-		mkdir ./out
-		./build.sh -o out -t ./transliterations/${transliteration}.tsv $(find ${sourceFonts}/src/ -type f -name '*.sfd' -not -name '*MathTeXGyre.sfd')
+		outname=$(echo ${transliteration} | tr '_' ' ' | awk '{ for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2); print }')
+		mkdir -p "$out/share/fonts/${pname}"
+		python3 ./swap.py -o "$out/share/fonts/${pname}/${transliteration}.ttf" -t './transliterations/${transliteration}.tsv' -n "$outname" '${pkgs.noto-fonts}/share/fonts/noto/NotoSans[wdth,wght].ttf'
 	'';
 
 	installPhase = ''
-		find ./out/ \( -name '*.otf' -o -name '*.ttf' -o -name '*.woff' -o -name '*.woff2' \) -exec install -m444 -Dt $out/share/fonts/truetype {} \;
-		install -m444 -Dt $out/share/doc/${name} ./readme.md
-
-		for i in "AUTHORS" "NEWS" "LICENSE"; do
-			install -m444 -Dt $out/share/doc/${name} ${sourceFonts}/$i
-		done
+		install -m444 -Dt $out/share/doc/${pname} ./readme.md
 	'';
 
 	meta = with pkgs.lib; {
-		description = "Transliteration fonts based on DejaVu Fonts";
+		description = "Transliteration fonts based on Noto Sans";
 		license = pkgs.lib.licenses.ofl;
 	};
 }

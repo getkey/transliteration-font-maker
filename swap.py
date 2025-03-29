@@ -1,54 +1,91 @@
 #!/usr/bin/env python3
 
-import fontforge
 import argparse
+from fontTools.ttLib import TTFont
+from fontTools.feaLib.builder import addOpenTypeFeaturesFromString
 
-def rename(font, new_font_name):
-    font.fullname = font.fullname.replace(font.familyname, new_font_name)
-    font.familyname = new_font_name
-    font.fontname = font.fullname.replace(' ', '')
+def rename(font, family_name):
+	"""Rename the font family name and update other name fields."""
+	name_table = font['name']
 
-def swap(font, mappings):
+	subfamily_name = None
+	for record in name_table.names:
+		if record.nameID == 2:
+			subfamily_name = record.toUnicode()
+			break
+
+	if not subfamily_name:
+		raise ValueError("Subfamily name (nameID 2) not found in name table.")
+
+	full_name = f"{family_name} {subfamily_name}"
+	postscript_name = f"{family_name}-{subfamily_name}".replace(' ', '')
+
+	def update_name(nameID, new_value):
+        # we must iterate because the name table might contain the same nameID multiple times
+        # for different platforms or languages
+		for record in name_table.names:
+			if record.nameID == nameID:
+				record.string = new_value.encode(record.getEncoding())
+
+	update_name(1, family_name)       # Font Family name
+	update_name(4, full_name)         # Full font name
+	update_name(6, postscript_name)   # PostScript name
+
+
+def char_to_glyph(font, char):
+    """Get the glyph name for a character using the cmap."""
+    unicode_val = ord(char)
+    cmap = font.getBestCmap()
+
+    if unicode_val in cmap:
+        return cmap[unicode_val]
+    raise ValueError(f"Character '{char}' not found in cmap")
+
+def build_feature_string(font, mappings):
+    """Build a feature string for the font based on the mappings."""
+
+    features = ""
+
     for script, simple_map in mappings.items():
-        swap_table_name = f"crossswap_{script}"
-        font.addLookup(swap_table_name, "gsub_single", (), (("ccmp", ((script, ("dflt")),)),))
-        font.addLookupSubtable(swap_table_name, swap_table_name)
-
-        ligature_table_name = f"crosslig_{script}"
-        font.addLookup(ligature_table_name, "gsub_ligature", (), (("ccmp", ((script, ("dflt")),)),))
-        font.addLookupSubtable(ligature_table_name, ligature_table_name)
-
-        decompose_table_name = f"crossdecomp_{script}"
-        font.addLookup(decompose_table_name, "gsub_multiple", (), (("ccmp", ((script, ("dflt")),)),))
-        font.addLookupSubtable(decompose_table_name, decompose_table_name)
+        rules = []
 
         for key, value in simple_map.items():
             try:
                 if len(key) > 1 and len(value) > 1:
-                    # not implemented, this require contextual substitution which is non-trivial
-                    continue
+                    continue # skip contextual
 
                 if len(key) > 1:
-                    src = font[ord(value)]
-                    dest = tuple([font[ord(char)].glyphname for char in key])
+                    dest_glyph = char_to_glyph(font, value)
+                    src_glyphs = " ".join(char_to_glyph(font, c) for c in key)
+                    rules.append(f"sub {src_glyphs} by {dest_glyph};")
 
-                    src.addPosSub(ligature_table_name, dest)
-                    continue
+                elif len(value) > 1:
+                    src_glyph = char_to_glyph(font, key)
+                    dest_glyphs = " ".join(char_to_glyph(font, c) for c in value)
+                    rules.append(f"sub {src_glyph} by {dest_glyphs};")
 
-                if len(value) > 1:
-                    src = font[ord(key)]
-                    dest = tuple([font[ord(char)].glyphname for char in value])
+                else:
+                    src_glyph = char_to_glyph(font, key)
+                    dest_glyph = char_to_glyph(font, value)
+                    rules.append(f"sub {src_glyph} by {dest_glyph};")
 
-                    src.addPosSub(decompose_table_name, dest)
-                    continue
+            except ValueError as e:
+                print(f"Warning: {e}")
+                continue
 
-                font[ord(key)].addPosSub(swap_table_name, font[ord(value)].glyphname)
-            except TypeError as err:
-                if 'No such glyph' in str(err):
-                    print(f"Glyph not found: {key} or {value}", file=sys.stderr)
-                    continue
+        if len(rules) > 0:
+            features += f"""
+feature ccmp {{
+    script {script};
+    language dflt;
 
-                raise err
+    {''.join(rules)}
+
+}} ccmp;
+"""
+
+    return features
+
 
 def gen_mappings(file):
     script1, script2 = file.readline().strip().split('\t')
@@ -56,36 +93,35 @@ def gen_mappings(file):
     mappings = {}
     mappings[script1] = {}
     mappings[script2] = {}
-    
+
     for line in file:
         key, value = line.strip().split('\t')
-
         mappings[script1][key] = value
         mappings[script2][value] = key
 
     return mappings
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Swap characters in a font')
-    parser.add_argument('input', type=str, help='Input font file')
-    parser.add_argument('-o', '--output', type=str, action="append", required=True, help='Output font file (e.g. .otf, .ttf, .sfd)')
-    parser.add_argument('-n', '--name', type=str, help='Font family name')
-    parser.add_argument('-t', '--transliteration-table', required=True, type=str, help='Transcription TSV file')
+    parser = argparse.ArgumentParser(description='Create a transliteration font')
+    parser.add_argument('input', type=str, help='Input font file (.ttf)')
+    parser.add_argument('-o', '--output', type=str, required=True, help='Output font file (.ttf)')
+    parser.add_argument('-n', '--name', type=str, help='New font family name')
+    parser.add_argument('-t', '--transliteration-table', required=True, type=str, help='Transcription file (.tsv)')
     args = parser.parse_args()
 
     with open(args.transliteration_table, 'r', encoding='utf-8') as transliteration_file:
         mappings = gen_mappings(transliteration_file)
 
-    font = fontforge.open(args.input)
-    font.encoding = 'UnicodeBmp' # make sure the unicode is taken into account
+    font = TTFont(args.input)
+
     if args.name:
         rename(font, args.name)
-    swap(font, mappings)
 
-    for output in args.output:
-        if output.endswith('.sfd'):
-            font.save(output)
-        else:
-            font.generate(output)
+    feature_str = build_feature_string(font, mappings)
+    addOpenTypeFeaturesFromString(font, feature_str)
 
-        print(f"Font {font.fontname} saved as {output}")
+    font.save(args.output)
+    print(f"Font saved as {args.output}")
+
+    font.close()
