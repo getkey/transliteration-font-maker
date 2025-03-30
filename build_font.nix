@@ -22,7 +22,6 @@ pkgs.stdenv.mkDerivation rec {
 	'';
 
 	meta = with pkgs.lib; {
-		description = "Transliteration fonts based on Noto Sans";
-		license = pkgs.lib.licenses.ofl;
+		description = "Transliteration fonts";
 	};
 }
