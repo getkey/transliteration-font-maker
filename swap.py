@@ -3,6 +3,7 @@
 import argparse
 from fontTools.ttLib import TTFont
 from fontTools.feaLib.builder import addOpenTypeFeaturesFromString
+from sortedcontainers import SortedDict
 
 def rename(font, family_name):
 	"""Rename the font family name and update other name fields."""
@@ -86,13 +87,17 @@ feature ccmp {{
 
     return features
 
+def sort_long_first(item):
+    # when we create the features, we want substitutions with the most characters to be applied first
+    # because if a substitution with 1 or few characters is applied first, it will prevent substitutions with more characters containing the same characters
+    return -len(item)
 
 def gen_mappings(file):
     script1, script2 = file.readline().strip().split('\t')
 
     mappings = {}
-    mappings[script1] = {}
-    mappings[script2] = {}
+    mappings[script1] = SortedDict(sort_long_first)
+    mappings[script2] = SortedDict(sort_long_first)
 
     for line in file:
         key, value = line.strip().split('\t')
