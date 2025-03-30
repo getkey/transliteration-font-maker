@@ -3,11 +3,17 @@
 let
 	pkgs = import <nixpkgs> {};
 	buildFont = import ./build_font.nix;
-	transliterations = [
-		"iso_9_1995"
-		"traditional_greek_romanization"
+	paramsList = [
+		{
+			transliteration = "iso_9_1995";
+			sourceFont = "${pkgs.noto-fonts}/share/fonts/noto/NotoSans[wdth,wght].ttf";
+		}
+		{
+			transliteration = "traditional_greek_romanization";
+			sourceFont = "${pkgs.noto-fonts}/share/fonts/noto/NotoSans[wdth,wght].ttf";
+		}
 	];
-	paramsList = builtins.map (transliteration: { inherit transliteration; version = version; }) transliterations;
-	results = builtins.map buildFont paramsList;
+	finalParamsList = builtins.map ({ transliteration, sourceFont }: { inherit transliteration; inherit sourceFont; version = version; }) paramsList;
+	results = builtins.map buildFont finalParamsList;
 in
 results

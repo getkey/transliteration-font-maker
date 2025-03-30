@@ -109,11 +109,14 @@ def gen_mappings(file):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create a transliteration font')
-    parser.add_argument('input', type=str, help='Input font file (.ttf)')
-    parser.add_argument('-o', '--output', type=str, required=True, help='Output font file (.ttf)')
+    parser.add_argument('input', type=str, help='Input font file (.ttf, .otf)')
+    parser.add_argument('-o', '--output', type=str, required=True, help='Output font file (.ttf, .otf)')
     parser.add_argument('-n', '--name', type=str, help='New font family name')
     parser.add_argument('-t', '--transliteration-table', required=True, type=str, help='Transcription file (.tsv)')
     args = parser.parse_args()
+
+    if args.input.endswith('.ttf') and not args.output.endswith('.ttf') or args.input.endswith('.otf') and not args.output.endswith('.otf'):
+        raise ValueError("Input and output file must have the same extension")
 
     with open(args.transliteration_table, 'r', encoding='utf-8') as transliteration_file:
         mappings = gen_mappings(transliteration_file)

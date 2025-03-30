@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> {}, version, transliteration }:
+{ pkgs ? import <nixpkgs> {}, version, transliteration, sourceFont }:
 
 pkgs.stdenv.mkDerivation rec {
 	pname = "${transliteration}-fonts";
@@ -11,17 +11,14 @@ pkgs.stdenv.mkDerivation rec {
 		pkgs.python3
 		pkgs.python3Packages.fonttools
 		pkgs.python3Packages.sortedcontainers
-		pkgs.noto-fonts
 	];
 
 	buildPhase = ''
+		filename=$(basename '${sourceFont}')
+		extension=''${filename##*.}
 		outname=$(echo ${transliteration} | tr '_' ' ' | awk '{ for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2); print }')
 		mkdir -p "$out/share/fonts/${pname}"
-		python3 ./swap.py -o "$out/share/fonts/${pname}/${transliteration}.ttf" -t './transliterations/${transliteration}.tsv' -n "$outname" '${pkgs.noto-fonts}/share/fonts/noto/NotoSans[wdth,wght].ttf'
-	'';
-
-	installPhase = ''
-		install -m444 -Dt $out/share/doc/${pname} ./readme.md
+		python3 ./swap.py -o "$out/share/fonts/${pname}/${transliteration}.$extension" -t './transliterations/${transliteration}.tsv' -n "$outname" '${sourceFont}'
 	'';
 
 	meta = with pkgs.lib; {
