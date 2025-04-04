@@ -20,6 +20,10 @@ let
 			transliteration = "mkhedruli_romanization";
 			sourceFont = "${pkgs.dejavu_fonts}/share/fonts/truetype/DejaVuSans.ttf";
 		}
+		{
+			transliteration = "kunrei-shiki_hiragana_romanization";
+			sourceFont = "${pkgs.ipafont}/share/fonts/opentype/ipag.ttf";
+		}
 	];
 	finalParamsList = builtins.map ({ transliteration, sourceFont }: { inherit transliteration; inherit sourceFont; version = version; }) paramsList;
 	results = builtins.map buildFont finalParamsList;

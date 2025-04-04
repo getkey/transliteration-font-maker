@@ -2,6 +2,7 @@
 
 import argparse
 from fontTools.ttLib import TTFont
+from fontTools.ttLib.tables._g_l_y_f import Glyph
 from fontTools.feaLib.builder import addOpenTypeFeaturesFromString
 from sortedcontainers import SortedDict
 
@@ -53,11 +54,21 @@ def build_feature_string(font, mappings):
         for key, value in simple_map.items():
             try:
                 if len(key) > 1 and len(value) > 1:
-                    continue # skip contextual
-
-                if len(key) > 1:
-                    dest_glyph = char_to_glyph(font, value)
                     src_glyphs = " ".join(char_to_glyph(font, c) for c in key)
+                    dest_glyphs = " ".join(char_to_glyph(font, c) for c in value)
+                    dummy_glyph = "_".join(char_to_glyph(font, c) for c in value)
+
+                    if dummy_glyph not in font.getGlyphOrder():
+                        font["glyf"].glyphs[dummy_glyph] = Glyph()
+                        font["hmtx"].metrics[dummy_glyph] = (0, 0)
+                        font.setGlyphOrder(font.getGlyphOrder() + [dummy_glyph])
+
+                    rules.append(f"sub {src_glyphs} by {dummy_glyph};")
+                    rules.append(f"sub {dummy_glyph} by {dest_glyphs};")
+
+                elif len(key) > 1:
+                    src_glyphs = " ".join(char_to_glyph(font, c) for c in key)
+                    dest_glyph = char_to_glyph(font, value)
                     rules.append(f"sub {src_glyphs} by {dest_glyph};")
 
                 elif len(value) > 1:
